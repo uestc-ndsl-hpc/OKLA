@@ -16,6 +16,7 @@ int main(int argc, char** argv) {
     cmdl({"-n", "--size"}, 4) >> n;
     auto verbose = cmdl[{"-v", "--verbose"}];
     util::Logger::init(verbose);
+    util::Logger::print_environment_info();
 
     // create positive-definite matrix A
     auto A = matrix_ops::create_symmetric_random<demo_type>(n);
@@ -30,7 +31,7 @@ int main(int argc, char** argv) {
 
     util::Logger::tic("Cusolver Cholesky Factorization");
     auto status = matrix_ops::cusolver::cholesky(cusolver_handle, A.data(), n);
-    util::Logger::toc("Cusolver Cholesky Factorization");
+    util::Logger::toc("Cusolver Cholesky Factorization", (1.0 / 3.0) * n * n * n);
 
     if (status != 0) {
         std::cerr << "Cholesky factorization failed with status: " << status
