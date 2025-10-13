@@ -110,7 +110,7 @@ thrust::device_vector<T> create_normal_random(size_t n, T mean, T stddev) {
 template <typename T>
 thrust::device_vector<T> create_symmetric_random(size_t n, bool fixed_seed) {
     util::Logger::tic("create_symmetric_random");
-    util::Logger::println("Creating test device C of size {}x{}", n, n);
+    util::Logger::println("[info] Creating test device matrix of size {}x{}", n, n);
     auto C = thrust::device_vector<T>(n * n);
     auto C_ptr = thrust::raw_pointer_cast(C.data());
     detail::generate_random_inplace(C_ptr, n * n,
