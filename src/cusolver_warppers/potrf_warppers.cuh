@@ -13,7 +13,7 @@ namespace matrix_ops {
 namespace cusolver {
 template <typename T>
 int potrf(const common::CusolverDnHandle& handle, thrust::device_ptr<T> A,
-          size_t n) {
+          size_t n, size_t lda = 0) {
     auto data_type = CUDA_R_32F;
     auto compute_type = CUDA_R_32F;
 
@@ -34,8 +34,9 @@ int potrf(const common::CusolverDnHandle& handle, thrust::device_ptr<T> A,
     // pre allocate workspace
     size_t size_d = 0;
     size_t size_h = 0;
+    lda = lda == 0 ? n : lda;
     auto status = cusolverDnXpotrf_bufferSize(
-        handle, params, CUBLAS_FILL_MODE_LOWER, n, data_type, A.get(), n,
+        handle, params, CUBLAS_FILL_MODE_LOWER, n, data_type, A.get(), lda,
         compute_type, &size_d, &size_h);
     auto d_work = thrust::device_vector<char>(size_d);
     auto h_work = thrust::host_vector<char>(size_h);
@@ -43,7 +44,7 @@ int potrf(const common::CusolverDnHandle& handle, thrust::device_ptr<T> A,
     // call potrf
     thrust::device_vector<int> info_d(1);
     cusolverDnXpotrf(handle, params, CUBLAS_FILL_MODE_LOWER, n, data_type,
-                     A.get(), n, compute_type, d_work.data().get(), size_h,
+                     A.get(), lda, compute_type, d_work.data().get(), size_d,
                      h_work.data(), size_h, info_d.data().get());
     thrust::host_vector<int> info_h = info_d;
     return info_h[0];

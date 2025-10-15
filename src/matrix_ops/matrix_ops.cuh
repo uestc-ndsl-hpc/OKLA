@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cublas_v2.h>
 #include <fmt/format.h>
 #include <thrust/device_vector.h>
