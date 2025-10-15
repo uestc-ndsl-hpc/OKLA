@@ -34,7 +34,10 @@ struct extract_L_functor_2d {
 template <typename T>
 void RunCholeskyTest() {
     constexpr size_t n = 4096;
-    constexpr T kTolerance = static_cast<T>(1e-4);
+    T kTolerance = static_cast<T>(1e-4);
+    if constexpr (std::is_same_v<T, double>) {
+        kTolerance = static_cast<T>(1e-13);
+    }
     // create positive-definite matrix A
     auto d_A = matrix_ops::create_symmetric_random<T>(n);
     // A = A + n * I
@@ -64,13 +67,13 @@ void RunCholeskyTest() {
         cublasSnrm2(cublas_handle, n * n,
                     thrust::raw_pointer_cast(ori_A.data()), 1, &norm);
         ASSERT_LE(norm / n, kTolerance)
-            << "Cholesky factorization result is incorrect.";
+            << "Cusolver Cholesky factorization result is incorrect.";
     } else if constexpr (std::is_same_v<T, double>) {
         double norm = 0;
         cublasDnrm2(cublas_handle, n * n,
                     thrust::raw_pointer_cast(ori_A.data()), 1, &norm);
         ASSERT_LE(norm / n, kTolerance)
-            << "Cholesky factorization result is incorrect.";
+            << "Cusolver Cholesky factorization result is incorrect.";
     }
 
     // also test OSLA implementation which should call potrf under the hood
@@ -92,13 +95,13 @@ void RunCholeskyTest() {
         cublasSnrm2(cublas_handle, n * n,
                     thrust::raw_pointer_cast(ori_A.data()), 1, &norm);
         ASSERT_LE(norm / n, kTolerance)
-            << "Cholesky factorization result is incorrect.";
+            << "OSLA Cholesky factorization result is incorrect.";
     } else if constexpr (std::is_same_v<T, double>) {
         double norm = 0;
         cublasDnrm2(cublas_handle, n * n,
                     thrust::raw_pointer_cast(ori_A.data()), 1, &norm);
         ASSERT_LE(norm / n, kTolerance)
-            << "Cholesky factorization result is incorrect.";
+            << "OSLA Cholesky factorization result is incorrect.";
     }
 }
 

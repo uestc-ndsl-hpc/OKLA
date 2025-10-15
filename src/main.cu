@@ -6,6 +6,7 @@
 #include "common/log.h"
 #include "cusolver_warppers/cusolver_warppers.cuh"
 #include "matrix_ops/matrix_ops.cuh"
+#include "osla_warppers/osla_warppers.cuh"
 
 using demo_type = float;
 
@@ -72,6 +73,20 @@ int main(int argc, char** argv) {
         auto status =
             matrix_ops::cusolver::cholesky(cusolver_handle, A.data(), n);
         util::Logger::toc("Cusolver Cholesky Factorization",
+                          (1.0 / 3.0) * n * n * n);
+
+        if (status != 0) {
+            std::cerr << "Cholesky factorization failed with status: " << status
+                      << std::endl;
+            return -1;
+        }
+    }
+
+    if (cmdl[{"--test-osla"}]) {
+        util::Logger::tic("OSLA Cholesky Factorization");
+        auto status = matrix_ops::osla::cholesky(cusolver_handle, A.data(), n,
+                                                 n, 8192, 1024);
+        util::Logger::toc("OSLA Cholesky Factorization",
                           (1.0 / 3.0) * n * n * n);
 
         if (status != 0) {
