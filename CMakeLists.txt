@@ -47,14 +47,14 @@ target_link_libraries(matrix_ops_lib PUBLIC
     fmt::fmt
 )
 
-add_executable(okla-demo src/main.cu)
+add_executable(okla-test src/main.cu)
 
 target_link_libraries(
-    okla-demo PRIVATE
+    okla-test PRIVATE
     matrix_ops_lib
 )
 
-target_compile_options(okla-demo PRIVATE "--extended-lambda")
+target_compile_options(okla-test PRIVATE "--extended-lambda")
 
 enable_testing()
 add_subdirectory(tests)
