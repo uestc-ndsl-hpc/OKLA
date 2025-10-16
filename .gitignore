@@ -1,4 +1,5 @@
 log
-build
+build*
 .cache
 .clangd
+*rep
