@@ -41,6 +41,7 @@ target_link_libraries(matrix_ops_lib PUBLIC
     CUDA::cublas
     CUDA::cusolver
     CUDA::curand
+    CUDA::nvToolsExt
     mathdx::cublasdx
     mathdx::cusolverdx
     argh

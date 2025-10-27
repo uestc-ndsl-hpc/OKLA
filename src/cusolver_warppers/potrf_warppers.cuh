@@ -43,9 +43,14 @@ int potrf(const common::CusolverDnHandle& handle, thrust::device_ptr<T> A,
 
     // call potrf
     thrust::device_vector<int> info_d(1);
+    nvtxRangePushA("cholesky");
     cusolverDnXpotrf(handle, params, CUBLAS_FILL_MODE_LOWER, n, data_type,
                      A.get(), lda, compute_type, d_work.data().get(), size_d,
                      h_work.data(), size_h, info_d.data().get());
+    cudaStream_t s{};
+    cusolverDnGetStream(handle, &s);  // 若你自己 set 了 stream，就直接用那个
+    cudaStreamSynchronize(s);         // 确保 NVTX 范围里包含真正的 GPU 执行
+    nvtxRangePop();
     thrust::host_vector<int> info_h = info_d;
     return info_h[0];
 }
