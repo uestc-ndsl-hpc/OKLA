@@ -101,10 +101,10 @@ OklaStatus potrf(thrust::device_ptr<T> A, size_t n, size_t lda = 0) {
     // as the matrix provided by the caller. Previously Precision<double>()
     // was hard-coded which caused DataType mismatches when T=float.
     using Solver =
-        decltype(Size<32, 32>() + Precision<T>() + Type<type::real>() +
+        decltype(Size<64, 64>() + Precision<T>() + Type<type::real>() +
                  Function<function::potrf>() + FillMode<lower>() + Block() +
-                 SM<common::Arch>() + BlockDim<256>());
-    auto lda_smem = (unsigned int)34;
+                 SM<common::Arch>() + BlockDim<64>());
+    auto lda_smem = (unsigned int)66;
     const unsigned int sm_size = Solver::get_shared_memory_size(lda_smem);
     thrust::device_vector<typename Solver::status_type> d_info(1);
 

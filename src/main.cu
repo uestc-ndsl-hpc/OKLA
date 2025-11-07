@@ -101,6 +101,7 @@ int main(int argc, char** argv) {
     cmdl({"-n", "--size"}, 4) >> n;
     auto verbose = cmdl[{"-v", "--verbose"}];
     util::Logger::init(verbose);
+    util::Logger::init_timer(verbose);
     util::Logger::print_environment_info();
 
     if (cmdl[{"--float"}]) {

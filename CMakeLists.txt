@@ -41,11 +41,17 @@ target_link_libraries(matrix_ops_lib PUBLIC
     CUDA::cublas
     CUDA::cusolver
     CUDA::curand
-    mathdx::cublasdx
     mathdx::cusolverdx
+    mathdx::cusolverdx_fatbin
     argh
     fmt::fmt
 )
+
+set(CMAKE_CUDA_SEPARABLE_COMPILATION ON
+    CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+
+set_target_properties(matrix_ops_lib PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON)
 
 add_executable(okla-test src/main.cu)
 
@@ -55,6 +61,11 @@ target_link_libraries(
 )
 
 target_compile_options(okla-test PRIVATE "--extended-lambda")
+
+# Ensure okla-test uses separable compilation and pass -dlto for nvlink.
+set_target_properties(okla-test PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    INTERPROCEDURAL_OPTIMIZATION ON)
 
 enable_testing()
 add_subdirectory(tests)

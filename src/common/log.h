@@ -143,10 +143,6 @@ class Logger {
             fmt::println("[TIMER] {}: {:.4f} ms", name, milliseconds);
             auto tflops = (ops / 1e12f) / (milliseconds / 1000.0f);
             fmt::println("[TFLOPS] {}: {:.4f} TFLOPS", name, tflops);
-        } else {
-            println("[TIMER] {}: {:.4f} ms", name, milliseconds);
-            auto tflops = (ops / 1e12f) / (milliseconds / 1000.0f);
-            fmt::println("[TFLOPS] {}: {:.4f} TFLOPS", name, tflops);
         }
         cudaEventDestroy(stop);
     }
