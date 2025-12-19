@@ -50,16 +50,12 @@ int potrf(const common::CusolverDnHandle& handle, thrust::device_ptr<T> A,
              inner_index < outer_index + nb - 1 && inner_index < n;
              inner_index += b) {
             // panel factorization
-            util::Logger::tic("cholesky");
             matrix_ops::cusolver::potrf(
                 handle, A + inner_index * lda + inner_index, b, lda);
-            util::Logger::toc("cholesky", b * b * b);
             if (inner_index + b >= n) break;
 
             // update the elements below the panel
             // ops = (n - inner_index - b) * b * b;
-            auto msg = fmt::format("trsm m: {} n: {}", n - inner_index - b, b);
-            util::Logger::tic(msg);
 
             const int m_total = static_cast<int>(n - inner_index - b);
             const int nb_int = static_cast<int>(b);
@@ -170,7 +166,6 @@ int potrf(const common::CusolverDnHandle& handle, thrust::device_ptr<T> A,
                                 lda);
                 }
             }
-            util::Logger::toc(msg, (n - inner_index - b) * b * b);
             if (inner_index + b >= outer_index + nb - 1) break;
 
             // update the following panel
@@ -189,14 +184,12 @@ int potrf(const common::CusolverDnHandle& handle, thrust::device_ptr<T> A,
                     // A(inner_index+b : n-1, outer_index : inner_index+b-1)
                     //       X = A(inner_index+b : inner_index+2b-1, outer_index
                     //       : inner_index+b-1)
-                    util::Logger::tic("gemm panel update");
                     matrix_ops::gemm(
                         cublas_handle, m_total, b, k, alpha,
                         A + (inner_index + b) + outer_index * lda, lda, false,
                         A + (inner_index + b) + outer_index * lda, lda, true,
                         beta, A + (inner_index + b) + (inner_index + b) * lda,
                         lda);
-                    util::Logger::toc("gemm panel update", m_total * k * b);
                 }
             } else {
                 auto msg_local = fmt::format(
@@ -239,12 +232,9 @@ int potrf(const common::CusolverDnHandle& handle, thrust::device_ptr<T> A,
                             lda);
                     }
                 }
-                util::Logger::toc(msg_local,
-                                  b * (inner_index + b - outer_index) * b);
 
                 if (inner_index + 2 * b >= n) continue;
 
-                util::Logger::tic("gemm");
                 matrix_ops::gemm(
                     cublas_handle, n - inner_index - 2 * b, b,
                     inner_index - outer_index + b, (T)-1.0,
@@ -252,14 +242,11 @@ int potrf(const common::CusolverDnHandle& handle, thrust::device_ptr<T> A,
                     A + (inner_index + b) + outer_index * lda, lda, true,
                     (T)1.0, A + (inner_index + 2 * b) + (inner_index + b) * lda,
                     lda);
-                util::Logger::toc("gemm", 2 * (n - inner_index - 2 * b) * b *
-                                              (inner_index - outer_index + b));
             }
         }
 
         if (outer_index + nb >= n) break;
 
-        util::Logger::tic("syrk trailing");
         // update the trailing matrix outer
         if constexpr (std::is_same_v<T, float>) {
             float alpha = -1.0f;
@@ -282,18 +269,14 @@ int potrf(const common::CusolverDnHandle& handle, thrust::device_ptr<T> A,
                                                  (outer_index + nb) * lda),
                         lda);
         }
-        util::Logger::toc("syrk trailing", nb * (outer_index + nb) * nb);
 
         if (outer_index + 2 * nb >= n) continue;
 
-        util::Logger::tic("gemm trailing");
         matrix_ops::gemm(cublas_handle, n - outer_index - 2 * nb, nb,
                          outer_index + nb, (T)-1.0, A + outer_index + 2 * nb,
                          lda, false, A + outer_index + nb, lda, true, (T)1.0,
                          A + outer_index + 2 * nb + (outer_index + nb) * lda,
                          lda);
-        util::Logger::toc("gemm trailing", 2 * (n - outer_index - 2 * nb) * nb *
-                                               (outer_index + nb));
     }
 
     if (params) {

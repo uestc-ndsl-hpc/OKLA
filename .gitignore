@@ -2,4 +2,5 @@ log
 build*
 .cache
 .clangd
+.vscode
 *rep
