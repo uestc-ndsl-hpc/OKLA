@@ -8,6 +8,7 @@
 
 #include "../common/handle_warppers.h"
 #include "../cusolver_warppers/potrf_warppers.cuh"
+#include "../cusolver_warppers/trsm_warpper.cuh"
 #include "../matrix_ops/matrix_ops.cuh"
 
 namespace matrix_ops {
@@ -55,29 +56,12 @@ int potrf(const common::CusolverDnHandle& handle, thrust::device_ptr<T> A,
             const int m_total = static_cast<int>(n - inner_index - b);
             const int nb_int = static_cast<int>(b);
 
-            if constexpr (std::is_same_v<T, float>) {
-                float alpha = 1.0f;
-                cublasStrsm(cublas_handle, CUBLAS_SIDE_RIGHT,
-                            CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_T,
-                            CUBLAS_DIAG_NON_UNIT, m_total, nb_int, &alpha,
-                            (const float*)thrust::raw_pointer_cast(
-                                A + inner_index * lda + inner_index),
-                            lda,
-                            thrust::raw_pointer_cast(A + (inner_index + b) +
-                                                     inner_index * lda),
-                            lda);
-            } else if constexpr (std::is_same_v<T, double>) {
-                double alpha = 1.0;
-                cublasDtrsm(cublas_handle, CUBLAS_SIDE_RIGHT,
-                            CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_T,
-                            CUBLAS_DIAG_NON_UNIT, m_total, nb_int, &alpha,
-                            (const double*)thrust::raw_pointer_cast(
-                                A + inner_index * lda + inner_index),
-                            lda,
-                            thrust::raw_pointer_cast(A + (inner_index + b) +
-                                                     inner_index * lda),
-                            lda);
-            }
+            matrix_ops::cusolver::trsm(
+                cublas_handle, CUBLAS_SIDE_RIGHT, CUBLAS_FILL_MODE_LOWER,
+                CUBLAS_OP_T, CUBLAS_DIAG_NON_UNIT, static_cast<size_t>(m_total),
+                static_cast<size_t>(nb_int), static_cast<T>(1.0),
+                A + inner_index * lda + inner_index,
+                A + (inner_index + b) + inner_index * lda, lda, lda);
 
             if (inner_index + b >= outer_index + nb - 1) break;
 
