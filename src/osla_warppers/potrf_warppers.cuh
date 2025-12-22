@@ -28,19 +28,6 @@ int potrf(const common::CusolverDnHandle& handle, thrust::device_ptr<T> A,
     cusolverDnParams_t params = nullptr;
     cusolverDnCreateParams(&params);
 
-    auto data_type = CUDA_R_32F;
-    auto compute_type = CUDA_R_32F;
-    if constexpr (std::is_same_v<T, double>) {
-        data_type = CUDA_R_64F;
-        compute_type = CUDA_R_64F;
-    } else if constexpr (std::is_same_v<T, float>) {
-        data_type = CUDA_R_32F;
-        compute_type = CUDA_R_32F;
-    } else {
-        static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>,
-                      "potrf only supports float and double");
-    }
-
     for (auto outer_index = 0; outer_index < n; outer_index += nb) {
         for (auto inner_index = outer_index;
              inner_index < outer_index + nb - 1 && inner_index < n;
@@ -52,7 +39,6 @@ int potrf(const common::CusolverDnHandle& handle, thrust::device_ptr<T> A,
 
             // update the elements below the panel
             // ops = (n - inner_index - b) * b * b;
-
             const int m_total = static_cast<int>(n - inner_index - b);
             const int nb_int = static_cast<int>(b);
 

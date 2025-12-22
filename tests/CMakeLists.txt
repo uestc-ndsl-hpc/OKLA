@@ -1,5 +1,6 @@
 add_executable(matrix_ops_tests
     cholesky_test.cu
+    trsm_test.cu
 )
 
 target_link_libraries(matrix_ops_tests PRIVATE
@@ -20,4 +21,3 @@ gtest_discover_tests(matrix_ops_tests)
 set_target_properties(matrix_ops_tests PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     INTERPROCEDURAL_OPTIMIZATION ON)
-
