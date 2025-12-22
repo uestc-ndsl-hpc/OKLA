@@ -98,6 +98,9 @@ int benchmark(argh::parser& cmdl, size_t n, size_t m, size_t nrhs, size_t nb,
     }
 
     if (cmdl[{"--test-cusolver-trsm"}] || cmdl[{"--test-osla-trsm"}]) {
+        util::Logger::println("[info] Generating TRSM matrix A");
+        util::Logger::println("[info] m: {} nrhs: {} nb: {} b: {} ", m, nrhs,
+                              nb, b);
         auto A_trsm = matrix_ops::create_uniform_random<T>(m, m);
         thrust::for_each(thrust::counting_iterator<size_t>(0),
                          thrust::counting_iterator<size_t>(m * m),

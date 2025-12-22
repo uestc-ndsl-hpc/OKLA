@@ -89,9 +89,10 @@ void RunTrsmBlockedTest() {
     thrust::for_each(thrust::counting_iterator<size_t>(0),
                      thrust::counting_iterator<size_t>(n * n),
                      zero_upper_triangle_functor<T>(d_A.data(), n, n));
-    thrust::for_each(thrust::counting_iterator<size_t>(0),
-                     thrust::counting_iterator<size_t>(n),
-                     boost_diag_functor<T>(d_A.data(), n, n, static_cast<T>(n)));
+    thrust::for_each(
+        thrust::counting_iterator<size_t>(0),
+        thrust::counting_iterator<size_t>(n),
+        boost_diag_functor<T>(d_A.data(), n, n, static_cast<T>(n)));
 
     auto d_X = matrix_ops::create_uniform_random<T>(n, n);
 
@@ -102,10 +103,10 @@ void RunTrsmBlockedTest() {
 
     thrust::device_vector<T> d_B0 = d_B;
 
-    matrix_ops::osla::trsm(
-        handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
-        CUBLAS_DIAG_NON_UNIT, n, n, static_cast<T>(1.0), d_A.data(),
-        d_B.data(), n, n, nb, b);
+    matrix_ops::osla::trsm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER,
+                           CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, n,
+                           static_cast<T>(1.0), d_A.data(), d_B.data(), n, n,
+                           nb, b);
 
     const T max_solution_error = max_abs_diff(d_B, d_X);
     ASSERT_LE(max_solution_error, tolerance)

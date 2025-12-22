@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <cstddef>
+
 #include "../cusolver_warppers/trsm_warpper.cuh"
 #include "../matrix_ops/matrix_ops.cuh"
 
@@ -28,6 +31,11 @@ int trsm(const common::CublasHandle& handle, cublasSideMode_t side,
                 handle, side, uplo, trans, diag, bs, n, alpha,
                 A + inner_index * lda + inner_index, B + inner_index, lda, ldb);
 
+            // next_start = inner_end
+            // if next_start < outer_end:
+            //     next_end = min(next_start + bs, outer_end)
+            //     B[next_start:next_end, :] -= A[next_start:next_end,
+            //     outer:inner_end] @ B[outer:inner_end, :]
             auto next_start = inner_end;
             if (next_start < outer_end) {
                 auto next_end = std::min(next_start + bs, outer_end);
@@ -38,6 +46,9 @@ int trsm(const common::CublasHandle& handle, cublasSideMode_t side,
             }
             inner_index = inner_end;
         }
+        // if outer_end < n:
+        // B[outer_end:, :] -= A[outer_end:, outer:outer_end] @
+        // B[outer:outer_end, :]
         if (outer_end < n) {
             matrix_ops::gemm(handle, n - outer_end, n, outer_end - outer_index,
                              (T)-1.0, A + outer_end + outer_index * lda, lda,
