@@ -78,7 +78,7 @@ template <typename T>
 void RunTrsmBlockedTest() {
     constexpr size_t n = 27;
     constexpr size_t nb = 14;
-    constexpr size_t b = 8;
+    // constexpr size_t b = 8;
 
     T tolerance = static_cast<T>(1e-4);
     if constexpr (std::is_same_v<T, double>) {
@@ -103,10 +103,10 @@ void RunTrsmBlockedTest() {
 
     thrust::device_vector<T> d_B0 = d_B;
 
-    matrix_ops::osla::trsm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER,
+    matrix_ops::osla::tensorblas::trsm(handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER,
                            CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, n,
                            static_cast<T>(1.0), d_A.data(), d_B.data(), n, n,
-                           nb, b);
+                           nb);
 
     const T max_solution_error = max_abs_diff(d_B, d_X);
     ASSERT_LE(max_solution_error, tolerance)

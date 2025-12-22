@@ -97,11 +97,12 @@ int benchmark(argh::parser& cmdl, size_t n, size_t m, size_t nrhs, size_t nb,
         }
     }
 
-    if (cmdl[{"--test-cusolver-trsm"}] || cmdl[{"--test-osla-trsm"}]) {
+    if (cmdl[{"--test-cusolver-trsm"}] || cmdl[{"--test-osla-trsm"}] ||
+        cmdl[{"--test-osla-tensorblas-trsm"}]) {
         util::Logger::println("[info] Generating TRSM matrix A");
         util::Logger::println("[info] m: {} nrhs: {} nb: {} b: {} ", m, nrhs,
                               nb, b);
-        auto A_trsm = matrix_ops::create_uniform_random<T>(m, m);
+        auto A_trsm = matrix_ops::create_normal_random<T>(m, m);
         thrust::for_each(thrust::counting_iterator<size_t>(0),
                          thrust::counting_iterator<size_t>(m * m),
                          [A_ptr = A_trsm.data(), m] __device__(size_t k) {
@@ -117,7 +118,7 @@ int benchmark(argh::parser& cmdl, size_t n, size_t m, size_t nrhs, size_t nb,
                              A_ptr[i * m + i] += static_cast<T>(m);
                          });
 
-        auto B = matrix_ops::create_uniform_random<T>(m, nrhs);
+        auto B = matrix_ops::create_normal_random<T>(m, nrhs);
         thrust::device_vector<T> B0 = B;
 
         float ops = static_cast<float>(m) * static_cast<float>(m) *
@@ -150,6 +151,22 @@ int benchmark(argh::parser& cmdl, size_t n, size_t m, size_t nrhs, size_t nb,
             if (status != 0) {
                 std::cerr << "OSLA TRSM failed with status: " << status
                           << std::endl;
+                return -1;
+            }
+        }
+
+        if (cmdl[{"--test-osla-tensorblas-trsm"}]) {
+            B = B0;
+            util::Logger::tic("OSLA TensorBLAS TRSM");
+            auto status = matrix_ops::osla::tensorblas::trsm(
+                cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER,
+                CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, nrhs,
+                static_cast<T>(1.0), A_trsm.data(), B.data(), m, m, nb);
+            util::Logger::toc("OSLA TensorBLAS TRSM", ops);
+
+            if (status != 0) {
+                std::cerr << "OSLA TensorBLAS TRSM failed with status: "
+                          << status << std::endl;
                 return -1;
             }
         }
