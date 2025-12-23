@@ -66,18 +66,21 @@ int trsm(const common::CublasHandle& handle, cublasSideMode_t side,
          thrust::device_ptr<T> B, size_t lda = 0, size_t ldb = 0,
          size_t nb = 8192) {
     // recrusive end
-    if (m <= nb)
+    if (n <= nb) {
         return matrix_ops::cusolver::trsm<T>(handle, side, uplo, trans, diag, m,
                                              n, alpha, A, B, lda, ldb);
+    }
+    lda = lda == 0 ? (side == CUBLAS_SIDE_LEFT) ? m : n : lda;
+    ldb = ldb == 0 ? m : ldb;
 
     matrix_ops::osla::tensorblas::trsm<T>(handle, side, uplo, trans, diag,
                                           m / 2, n, alpha, A, B, lda, ldb, nb);
     auto left = m - m / 2;
     matrix_ops::gemm(handle, left, n, m / 2, (T)-1.0, A + m / 2, lda, B, ldb,
                      (T)1.0, B + m / 2, ldb);
-    matrix_ops::osla::tensorblas::trsm<T>(
-        handle, side, uplo, trans, diag, left, n, alpha,
-        A + m / 2 + (m / 2) * lda, B + m / 2, lda, ldb, nb);
+    matrix_ops::osla::tensorblas::trsm<T>(handle, side, uplo, trans, diag, left,
+                                          n, alpha, A + m / 2 + (m / 2) * lda,
+                                          B + m / 2, lda, ldb, nb);
     return 0;
 }
 }  // namespace tensorblas

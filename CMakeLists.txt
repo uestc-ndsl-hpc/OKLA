@@ -13,23 +13,39 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 include(FetchContent)
 
 FetchContent_Declare(
-    fmt
-    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG 11.2.0
-)
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG 11.2.0)
 
 FetchContent_Declare(
-    argh
-    GIT_REPOSITORY https://github.com/adishavit/argh.git
-    GIT_TAG v1.3.2
-)
-
+  argh
+  GIT_REPOSITORY https://github.com/adishavit/argh.git
+  GIT_TAG v1.3.2)
 
 FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG v1.17.0
-)
+  cutlass
+  GIT_REPOSITORY https://github.com/NVIDIA/cutlass.git
+  GIT_TAG v4.3.3)
+
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG v1.17.0)
+
+FetchContent_GetProperties(cutlass)
+if(NOT cutlass_POPULATED)
+  FetchContent_Populate(cutlass)
+endif()
+
+add_library(cutlass_headers INTERFACE)
+
+target_include_directories(
+  cutlass_headers
+  INTERFACE ${cutlass_SOURCE_DIR}/include
+            ${cutlass_SOURCE_DIR}/tools/util/include
+            ${cutlass_SOURCE_DIR}/tools/library/include)
+
+target_compile_features(cutlass_headers INTERFACE cxx_std_17)
 
 FetchContent_MakeAvailable(fmt argh googletest)
 
@@ -42,10 +58,11 @@ add_library(matrix_ops_lib STATIC ${MATRIX_OPS_SOURCES}) # 显式指定 STATIC
 target_link_libraries(matrix_ops_lib PUBLIC CUDA::cublas CUDA::cusolver
                                             CUDA::curand argh fmt::fmt)
 
-# 统一加上 -lineinfo 和 --extended-lambda
+target_link_libraries(matrix_ops_lib PUBLIC cutlass_headers)
+
 target_compile_options(
   matrix_ops_lib PUBLIC $<$<COMPILE_LANGUAGE:CUDA>:--generate-line-info
-                        --extended-lambda>)
+                        --extended-lambda --expt-relaxed-constexpr>)
 
 # --- 4. 可执行文件 ---
 add_executable(okla-test src/main.cu)
