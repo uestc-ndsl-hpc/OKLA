@@ -5,9 +5,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 17)
 
 # --- 1. 建议将全局优化开关放在 target 创建之前 ---
-set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+set(CMAKE_CUDA_SEPARABLE_COMPILATION OFF)
 # 如果你不需要极致的链接时优化，可以把下面这行关掉来消除警告
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 
 # --- 2. 依赖管理 ---
 include(FetchContent)
