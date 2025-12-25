@@ -9,7 +9,6 @@
 #include "cusolver_warppers/cusolver_warppers.cuh"
 #include "matrix_ops/matrix_ops.cuh"
 #include "osla_warppers/osla_warppers.cuh"
-#include "osla_warppers/trsm_wapppers.cuh"
 
 template <typename T>
 void warm_up() {

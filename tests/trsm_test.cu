@@ -10,7 +10,8 @@
 
 #include "../src/common/handle_warppers.h"
 #include "../src/matrix_ops/matrix_ops.cuh"
-#include "../src/osla_warppers/trsm_wapppers.cuh"
+#include "../src/okla_warppers/trsm_warppers.cuh"
+#include "../src/osla_warppers/trsm_warppers.cuh"
 
 template <typename T>
 struct zero_upper_triangle_functor {
@@ -126,4 +127,49 @@ TEST(TrsmBlockedTest, SolvesLowerTriangularFloat) {
 
 TEST(TrsmBlockedTest, SolvesLowerTriangularDouble) {
     RunTrsmBlockedTest<double>();
+}
+
+template <typename T>
+void RunTrsmOklaTest() {
+    constexpr size_t n = 128;
+    constexpr T alpha = static_cast<T>(1.0);
+    constexpr T tolerance = static_cast<T>(1e-3);
+
+    auto d_A = matrix_ops::create_uniform_random<T>(n, n);
+    thrust::for_each(thrust::counting_iterator<size_t>(0),
+                     thrust::counting_iterator<size_t>(n * n),
+                     zero_upper_triangle_functor<T>(d_A.data(), n, n));
+    thrust::for_each(
+        thrust::counting_iterator<size_t>(0),
+        thrust::counting_iterator<size_t>(n),
+        boost_diag_functor<T>(d_A.data(), n, n, static_cast<T>(n)));
+
+    auto d_X = matrix_ops::create_uniform_random<T>(n, n);
+
+    common::CublasHandle handle;
+    thrust::device_vector<T> d_B(n * n);
+    matrix_ops::gemm(handle, n, n, n, static_cast<T>(1.0), d_A.data(), n,
+                     d_X.data(), n, static_cast<T>(0.0), d_B.data(), n);
+
+    thrust::device_vector<T> d_B0 = d_B;
+
+    int status = matrix_ops::okla::trsm(
+        handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
+        CUBLAS_DIAG_NON_UNIT, n, n, alpha, d_A.data(), d_B.data(), n, n);
+    ASSERT_EQ(status, 0) << "OKLA TRSM dispatch failed or was not matched.";
+
+    const T max_solution_error = max_abs_diff(d_B, d_X);
+    ASSERT_LE(max_solution_error, tolerance)
+        << "OKLA TRSM result does not match the expected solution.";
+
+    thrust::device_vector<T> d_residual = d_B0;
+    matrix_ops::gemm(handle, n, n, n, static_cast<T>(1.0), d_A.data(), n,
+                     d_B.data(), n, static_cast<T>(-1.0), d_residual.data(), n);
+    const T max_residual = max_abs(d_residual);
+    ASSERT_LE(max_residual, tolerance)
+        << "A * X did not reconstruct the original B within tolerance.";
+}
+
+TEST(TrsmOklaTest, SolvesLowerTriangularFloat) {
+    RunTrsmOklaTest<float>();
 }

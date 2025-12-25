@@ -8,8 +8,8 @@
 
 #include "../common/handle_warppers.h"
 #include "../cusolver_warppers/potrf_warppers.cuh"
-#include "../cusolver_warppers/trsm_warpper.cuh"
 #include "../matrix_ops/matrix_ops.cuh"
+#include "trsm_warppers.cuh"
 
 namespace matrix_ops {
 namespace osla {
