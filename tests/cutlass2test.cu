@@ -6,8 +6,8 @@
 #include <cutlass/gemm_coord.h>
 #include <cutlass/layout/matrix.h>
 #include <cutlass/util/device_memory.h>
+#include <fmt/base.h>
 #include <thrust/device_vector.h>
-#include "fmt/base.h"
 
 #define CUTLASS_CHECK(status)                                                 \
     {                                                                         \
@@ -89,11 +89,13 @@ int main() {
     cudaEventDestroy(stop);
 
     double avg_ms = double(total_ms) / double(iterations);
-    double avg_s  = avg_ms / 1000.0;
-    double flops = 2.0 * double(problem_size.m()) * double(problem_size.n()) * double(problem_size.k());
+    double avg_s = avg_ms / 1000.0;
+    double flops = 2.0 * double(problem_size.m()) * double(problem_size.n()) *
+                   double(problem_size.k());
     double tflops = flops / 1.0e12 / avg_s;
 
-    fmt::println("Average time: {:.3f} ms, {:.3f} s, {:.3f} TFLOPS", avg_ms, avg_s, tflops);
+    fmt::println("Average time: {:.3f} ms, {:.3f} s, {:.3f} TFLOPS", avg_ms,
+                 avg_s, tflops);
 
     return 0;
 }
