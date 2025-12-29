@@ -40,7 +40,7 @@ int trsm(const common::CublasHandle& handle, cublasSideMode_t side,
          size_t m, size_t n, T alpha, thrust::device_ptr<T> A,
          thrust::device_ptr<T> B, size_t lda = 0, size_t ldb = 0,
          size_t nb = 8192, size_t b = 64) {
-    if (n <= nb) {
+    if (m <= nb) {
         return matrix_ops::cusolver::trsm<T>(handle, side, uplo, trans, diag, m,
                                              n, alpha, A, B, lda, ldb);
     }

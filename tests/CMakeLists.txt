@@ -40,14 +40,3 @@ set_target_properties(
 )
 
 target_link_libraries(cutlass2test PRIVATE cutlass_headers fmt::fmt)
-
-add_executable(okla_trsm_bench
-               okla_trsm_bench.cu
-               ${CMAKE_SOURCE_DIR}/src/okla_warppers/trsm_kernel.cu)
-
-set_target_properties(
-  okla_trsm_bench
-  PROPERTIES CUDA_SEPARABLE_COMPILATION OFF
-             INTERPROCEDURAL_OPTIMIZATION OFF)
-
-target_link_libraries(okla_trsm_bench PRIVATE CUDA::cudart)
