@@ -43,6 +43,48 @@ inline const char* cublasGetErrorString(cublasStatus_t error) {
     return "Unknown cublas status";
 }
 
+inline const char* cublasSideModeToString(cublasSideMode_t side) {
+    switch (side) {
+        case CUBLAS_SIDE_LEFT:
+            return "CUBLAS_SIDE_LEFT";
+        case CUBLAS_SIDE_RIGHT:
+            return "CUBLAS_SIDE_RIGHT";
+    }
+    return "CUBLAS_SIDE_UNKNOWN";
+}
+
+inline const char* cublasFillModeToString(cublasFillMode_t uplo) {
+    switch (uplo) {
+        case CUBLAS_FILL_MODE_LOWER:
+            return "CUBLAS_FILL_MODE_LOWER";
+        case CUBLAS_FILL_MODE_UPPER:
+            return "CUBLAS_FILL_MODE_UPPER";
+    }
+    return "CUBLAS_FILL_MODE_UNKNOWN";
+}
+
+inline const char* cublasOperationToString(cublasOperation_t trans) {
+    switch (trans) {
+        case CUBLAS_OP_N:
+            return "CUBLAS_OP_N";
+        case CUBLAS_OP_T:
+            return "CUBLAS_OP_T";
+        case CUBLAS_OP_C:
+            return "CUBLAS_OP_C";
+    }
+    return "CUBLAS_OP_UNKNOWN";
+}
+
+inline const char* cublasDiagTypeToString(cublasDiagType_t diag) {
+    switch (diag) {
+        case CUBLAS_DIAG_NON_UNIT:
+            return "CUBLAS_DIAG_NON_UNIT";
+        case CUBLAS_DIAG_UNIT:
+            return "CUBLAS_DIAG_UNIT";
+    }
+    return "CUBLAS_DIAG_UNKNOWN";
+}
+
 class Logger {
    public:
     static void init(bool verbose) { get()._verbose = verbose; }
