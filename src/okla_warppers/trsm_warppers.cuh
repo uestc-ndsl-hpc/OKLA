@@ -19,11 +19,8 @@ __global__ void trsm_kernel_f_128_n_left_lower_nt_nu(
     constexpr int m = 128;
 
     __shared__ float shared_diag[m];
-    if (tx < 32) {
-#pragma unroll
-        for (auto i = 4 * tx; i < 4 * tx + 4; i++) {
-            shared_diag[i] = 1.0f / A[i * lda + i];
-        }
+    if (tx < m) {
+        shared_diag[tx] = 1.0f / A[tx * lda + tx];
     }
     __syncthreads();
 
@@ -36,12 +33,10 @@ __global__ void trsm_kernel_f_128_n_left_lower_nt_nu(
         for (auto col = 0; col < block_num; col += blockDim.x) {
             int global_col_idx = blockIdx.x * block_num + col + tx;
 
-            if (col + tx < block_num) {
-                if (global_col_idx < nrhs) {
-                    shared_X[col + tx] =
-                        block_B[row + (col + tx) * ldb] * shared_diag[row];
-                    block_B[row + (col + tx) * ldb] = shared_X[col + tx];
-                }
+            if (col + tx < block_num && global_col_idx < nrhs) {
+                shared_X[col + tx] =
+                    block_B[row + (col + tx) * ldb] * shared_diag[row];
+                block_B[row + (col + tx) * ldb] = shared_X[col + tx];
             }
         }
         __syncthreads();
@@ -102,8 +97,8 @@ int trsm(const common::CublasHandle& handle, cublasSideMode_t side,
         return 0;
     }
 
-    constexpr int threads = 32;
-    constexpr int blocks = 256;
+    constexpr int threads = 128;
+    constexpr int blocks = 1280;
     trsm_kernel_f_128_n_left_lower_nt_nu<<<blocks, threads>>>(
         n, alpha, thrust::raw_pointer_cast(A), thrust::raw_pointer_cast(B), lda,
         ldb);
