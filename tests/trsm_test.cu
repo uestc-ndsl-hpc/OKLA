@@ -9,6 +9,7 @@
 #include <type_traits>
 
 #include "../src/common/handle_warppers.h"
+#include "../src/cusolver_warppers/trsm_warpper.cuh"
 #include "../src/matrix_ops/matrix_ops.cuh"
 #include "../src/okla_warppers/trsm_warppers.cuh"
 #include "../src/osla_warppers/trsm_warppers.cuh"
@@ -172,4 +173,46 @@ void RunTrsmOklaTest() {
 
 TEST(TrsmOklaTest, SolvesLowerTriangularFloat) {
     RunTrsmOklaTest<float>();
+}
+
+TEST(TrsmOklaTest, MatchesCublasFloatAlpha1) {
+    constexpr size_t m = 128;
+    constexpr float alpha = 1.0f;
+    constexpr float tolerance = 1e-3f;
+
+    auto d_A = matrix_ops::create_uniform_random<float>(m, m);
+    thrust::for_each(thrust::counting_iterator<size_t>(0),
+                     thrust::counting_iterator<size_t>(m * m),
+                     zero_upper_triangle_functor<float>(d_A.data(), m, m));
+    thrust::for_each(
+        thrust::counting_iterator<size_t>(0),
+        thrust::counting_iterator<size_t>(m),
+        boost_diag_functor<float>(d_A.data(), m, m, static_cast<float>(m)));
+
+    constexpr size_t n_cases[] = {1,   7,   31,  32,  33,  63,  64,
+                                  65,  127, 128, 129, 255, 256, 257,
+                                  511, 512, 513, 1024, 2048, 4096};
+
+    common::CublasHandle handle;
+    for (size_t n : n_cases) {
+        auto d_B0 = matrix_ops::create_uniform_random<float>(m, n);
+
+        auto d_B_okla = d_B0;
+        int okla_status = matrix_ops::okla::trsm(
+            handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
+            CUBLAS_DIAG_NON_UNIT, m, n, alpha, d_A.data(), d_B_okla.data(), m,
+            m);
+        ASSERT_EQ(okla_status, 0) << "okla trsm dispatch failed for n=" << n;
+
+        auto d_B_cublas = d_B0;
+        int cublas_status = matrix_ops::cusolver::trsm(
+            handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
+            CUBLAS_DIAG_NON_UNIT, m, n, alpha, d_A.data(), d_B_cublas.data(), m,
+            m);
+        ASSERT_EQ(cublas_status, 0) << "cublas trsm failed for n=" << n;
+
+        float max_solution_error = max_abs_diff(d_B_okla, d_B_cublas);
+        ASSERT_LE(max_solution_error, tolerance)
+            << "okla trsm mismatch vs cublas for n=" << n;
+    }
 }

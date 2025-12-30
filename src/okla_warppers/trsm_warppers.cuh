@@ -13,10 +13,8 @@ constexpr int max_block_num = 128;
 
 // here max nrhs is gridDim.x * max_block_num
 __global__ void trsm_kernel_f_128_n_left_lower_nt_nu(
-    size_t nrhs, float alpha, const float* __restrict__ A, float* __restrict__ B, size_t lda,
-    size_t ldb) {
-    if (blockIdx.x >= nrhs) return;
-
+    size_t nrhs, float alpha, const float* __restrict__ A,
+    float* __restrict__ B, size_t lda, size_t ldb) {
     auto tx = threadIdx.x;
     constexpr int m = 128;
 
@@ -36,10 +34,14 @@ __global__ void trsm_kernel_f_128_n_left_lower_nt_nu(
     for (auto row = 0; row < m; row++) {
         // solve X
         for (auto col = 0; col < block_num; col += blockDim.x) {
+            int global_col_idx = blockIdx.x * block_num + col + tx;
+
             if (col + tx < block_num) {
-                shared_X[col + tx] =
-                    block_B[row + (col + tx) * ldb] * shared_diag[row];
-                block_B[row + (col + tx) * ldb] = shared_X[col + tx];
+                if (global_col_idx < nrhs) {
+                    shared_X[col + tx] =
+                        block_B[row + (col + tx) * ldb] * shared_diag[row];
+                    block_B[row + (col + tx) * ldb] = shared_X[col + tx];
+                }
             }
         }
         __syncthreads();
@@ -48,7 +50,8 @@ __global__ void trsm_kernel_f_128_n_left_lower_nt_nu(
         for (auto col = 0; col < block_num; col++) {
             for (auto row_update = row + 1; row_update < m;
                  row_update += blockDim.x) {
-                if (row_update + tx < m) {
+                int global_col_idx = blockIdx.x * block_num + col;
+                if (row_update + tx < m && global_col_idx < nrhs) {
                     block_B[row_update + tx + col * ldb] -=
                         shared_X[col] * A[row * lda + row_update + tx];
                 }

@@ -8,6 +8,7 @@
 #include "common/log.h"
 #include "cusolver_warppers/cusolver_warppers.cuh"
 #include "matrix_ops/matrix_ops.cuh"
+#include "okla_warppers/trsm_warppers.cuh"
 #include "osla_warppers/osla_warppers.cuh"
 
 template <typename T>
@@ -97,7 +98,7 @@ int benchmark(argh::parser& cmdl, size_t n, size_t m, size_t nrhs, size_t nb,
     }
 
     if (cmdl[{"--test-cusolver-trsm"}] || cmdl[{"--test-osla-trsm"}] ||
-        cmdl[{"--test-osla-tensorblas-trsm"}]) {
+        cmdl[{"--test-osla-tensorblas-trsm"}] || cmdl[{"--test-okla-trsm"}]) {
         util::Logger::println("[info] Generating TRSM matrix A");
         util::Logger::println("[info] m: {} nrhs: {} nb: {} b: {} ", m, nrhs,
                               nb, b);
@@ -166,6 +167,28 @@ int benchmark(argh::parser& cmdl, size_t n, size_t m, size_t nrhs, size_t nb,
             if (status != 0) {
                 std::cerr << "OSLA TensorBLAS TRSM failed with status: "
                           << status << std::endl;
+                return -1;
+            }
+        }
+
+        if (cmdl[{"--test-okla-trsm"}]) {
+            if constexpr (std::is_same_v<T, float>) {
+                B = B0;
+                util::Logger::tic("OKLA TRSM");
+                auto status = matrix_ops::okla::trsm(
+                    cublas_handle, CUBLAS_SIDE_LEFT, CUBLAS_FILL_MODE_LOWER,
+                    CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, nrhs,
+                    static_cast<T>(1.0), A_trsm.data(), B.data(), m, m);
+                util::Logger::toc("OKLA TRSM", ops);
+
+                if (status != 0) {
+                    std::cerr << "OKLA TRSM failed with status: " << status
+                              << std::endl;
+                    return -1;
+                }
+            } else {
+                std::cerr << "OKLA TRSM only supports float. Use --float."
+                          << std::endl;
                 return -1;
             }
         }
